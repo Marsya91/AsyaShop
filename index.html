@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toko Online Simple</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-6">
+
+  <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    <!-- Katalog Produk -->
+    <div class="md:col-span-2">
+      <h1 class="text-2xl font-bold mb-4 text-gray-800">Katalog Produk</h1>
+      <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Produk di-render otomatis dari JavaScript -->
+      </div>
+    </div>
+
+    <!-- Ringkasan Pesanan / Cart -->
+    <div class="bg-white p-4 rounded-xl shadow-md h-fit border border-gray-100">
+      <h2 class="text-xl font-bold mb-4 border-b pb-2 text-gray-800">Keranjang Belanja</h2>
+      
+      <div id="cart-items" class="space-y-3 mb-4">
+        <p class="text-gray-400 text-sm italic">Keranjang masih kosong.</p>
+      </div>
+
+      <div class="border-t pt-3 font-bold flex justify-between mb-4 text-gray-800">
+        <span>Total:</span>
+        <span id="cart-total" class="text-emerald-600">Rp 0</span>
+      </div>
+
+      <!-- Form Data Pembeli -->
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Pemesan</label>
+          <input type="text" id="buyer-name" placeholder="Contoh: Budi Santoso" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+        
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Alamat Pengiriman</label>
+          <textarea id="buyer-address" rows="2" placeholder="Jl. Mawar No. 12, RT 01/02..." class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+        </div>
+        
+        <button onclick="checkoutWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+          <span>Kirim via WhatsApp</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. PENGATURAN UTAMA
+    // ==========================================
+    // Ganti dengan nomor WhatsApp Anda (Format Internasional: 628xxx tanpa + atau tanda hubung)
+    const SELLER_PHONE = "6281234567890"; 
+
+    // Daftar Produk Toko Anda
+    const products = [
+      { id: 1, name: "Kopi Gula Aren", price: 18000, desc: "Kopi manis segar gula aren asli" },
+      { id: 2, name: "Roti Bakar Cokelat", price: 15000, desc: "Roti bakar renyah dengan isian melimpah" },
+      { id: 3, name: "Teh Tarik Rempah", price: 12000, desc: "Teh susu hangat racikan manis" }
+    ];
+
+    let cart = [];
+
+    // ==========================================
+    // 2. FUNGSI UNTUK MENAMPILKAN PRODUK
+    // ==========================================
+    function renderProducts() {
+      const container = document.getElementById('product-list');
+      container.innerHTML = products.map(p => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-gray-800 text-lg">${p.name}</h3>
+            <p class="text-xs text-gray-500 mb-2">${p.desc}</p>
+            <p class="text-emerald-600 font-bold">Rp ${p.price.toLocaleString('id-ID')}</p>
+          </div>
+          <button onclick="addToCart(${p.id})" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-2 rounded-lg text-sm transition-colors w-full">
+            + Tambah ke Keranjang
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // ==========================================
+    // 3. FUNGSI KERANJANG
+    // ==========================================
+    function addToCart(productId) {
+      const product = products.find(p => p.id === productId);
+      const existing = cart.find(item => item.id === productId);
+
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ ...product, qty: 1 });
+      }
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const cartContainer = document.getElementById('cart-items');
+      const totalContainer = document.getElementById('cart-total');
+
+      if (cart.length === 0) {
+        cartContainer.innerHTML = '<p class="text-gray-400 text-sm italic">Keranjang masih kosong.</p>';
+        totalContainer.innerText = 'Rp 0';
+        return;
+      }
+
+      let total = 0;
+      cartContainer.innerHTML = cart.map(item => {
+        const itemTotal = item.price * item.qty;
+        total += itemTotal;
+        return `
+          <div class="flex justify-between items-center text-sm border-b pb-2">
+            <div>
+              <p class="font-semibold text-gray-800">${item.name}</p>
+              <p class="text-gray-500 text-xs">${item.qty} x Rp ${item.price.toLocaleString('id-ID')}</p>
+            </div>
+            <span class="font-bold text-gray-700">Rp ${itemTotal.toLocaleString('id-ID')}</span>
+          </div>
+        `;
+      }).join('');
+
+      totalContainer.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    // ==========================================
+    // 4. FUNGSI CHECKOUT WHATSAPP
+    // ==========================================
+    function checkoutWhatsApp() {
+      const name = document.getElementById('buyer-name').value.trim();
+      const address = document.getElementById('buyer-address').value.trim();
+
+      if (cart.length === 0) {
+        alert("Keranjang Anda masih kosong!");
+        return;
+      }
+      if (!name || !address) {
+        alert("Silakan lengkapi nama dan alamat pengiriman.");
+        return;
+      }
+
+      let message = `*HALO, SAYA MAU PESAN:*\n\n`;
+      let total = 0;
+
+      cart.forEach((item, index) => {
+        const subtotal = item.price * item.qty;
+        total += subtotal;
+        message += `${index + 1}. *${item.name}* (${item.qty}x) = Rp ${subtotal.toLocaleString('id-ID')}\n`;
+      });
+
+      message += `\n*TOTAL PEMBAYARAN:* Rp ${total.toLocaleString('id-ID')}\n\n`;
+      message += `*DATA PEMESAN:*\n`;
+      message += `- Nama: ${name}\n`;
+      message += `- Alamat: ${address}\n\n`;
+      message += `Mohon segera diproses ya, terima kasih!`;
+
+      const encodedMessage = encodeURIComponent(message);
+      const waUrl = `https://wa.me/${SELLER_PHONE}?text=${encodedMessage}`;
+
+      window.open(waUrl, '_blank');
+    }
+
+    // Jalankan aplikasi saat file dibuka
+    renderProducts();
+  </script>
+</body>
+</html>
